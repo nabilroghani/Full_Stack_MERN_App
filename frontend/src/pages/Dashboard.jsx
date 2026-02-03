@@ -2,59 +2,78 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
+// 1. Backend URL ko yahan define kar dein
+const API_URL = "https://todo-backend-weld-one.vercel.app";
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [todos, setTodos] = useState([]);
   const [title, setTitle] = useState("");
-  const [priority, setPriority] = useState("Medium"); // Priority state
+  const [priority, setPriority] = useState("Medium");
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
 
   const token = localStorage.getItem("token");
   const config = { headers: { Authorization: `Bearer ${token}` } };
 
+  // Fetch Todos
   const fetchTodos = async () => {
     try {
-      const { data } = await axios.get("https://todo-backend-weld-one.vercel.app/todo/get", config);
+      const { data } = await axios.get(`${API_URL}/todo/get`, config);
       setTodos(data);
     } catch (err) {
       if (err.response?.status === 401) navigate("/login");
     }
   };
 
-  useEffect(() => { fetchTodos(); }, []);
+  useEffect(() => {
+    fetchTodos();
+  }, []);
 
+  // Add Todo
   const handleAddTodo = async (e) => {
     e.preventDefault();
     if (!title.trim()) return;
     try {
-      const { data } = await axios.post("http://localhost:3000/todo/create", { title, priority }, config);
+      // Localhost ko API_URL se replace kar diya
+      const { data } = await axios.post(`${API_URL}/todo/create`, { title, priority }, config);
       setTodos([data, ...todos]);
       setTitle("");
       setPriority("Medium");
-    } catch (err) { alert("Add failed"); }
+    } catch (err) {
+      alert("Add failed: Make sure your backend is running and CORS is allowed.");
+    }
   };
 
+  // Toggle Complete
   const handleToggle = async (todo) => {
     try {
-      const { data } = await axios.put(`http://localhost:3000/todo/update/${todo._id}`, { isCompleted: !todo.isCompleted }, config);
+      const { data } = await axios.put(`${API_URL}/todo/update/${todo._id}`, { isCompleted: !todo.isCompleted }, config);
       setTodos(todos.map((t) => (t._id === todo._id ? data : t)));
-    } catch (err) { alert("Update failed"); }
+    } catch (err) {
+      alert("Update failed");
+    }
   };
 
+  // Save Edit
   const handleSaveEdit = async (id) => {
     try {
-      const { data } = await axios.put(`http://localhost:3000/todo/update/${id}`, { title: editTitle }, config);
+      const { data } = await axios.put(`${API_URL}/todo/update/${id}`, { title: editTitle }, config);
       setTodos(todos.map((t) => (t._id === id ? data : t)));
       setEditingId(null);
-    } catch (err) { alert("Edit failed"); }
+    } catch (err) {
+      alert("Edit failed");
+    }
   };
 
+  // Delete Todo
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:3000/todo/delete/${id}`, config);
+      await axios.delete(`${API_URL}/todo/delete/${id}`, config);
       setTodos(todos.filter((t) => t._id !== id));
-    } catch (err) { alert("Delete failed"); }
+    } catch (err) {
+      alert("Delete failed");
+    }
   };
 
   const getPriorityColor = (p) => {
@@ -69,8 +88,6 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-[#f8fafc] p-4 md:p-10 font-sans text-gray-900">
       <div className="max-w-4xl mx-auto">
-        
-        {/* Header - Glassmorphism effect */}
         <header className="flex flex-col sm:flex-row justify-between items-center bg-white border border-gray-200 p-6 rounded-2xl shadow-sm mb-8 gap-4">
           <div>
             <h1 className="text-2xl font-black text-blue-600 tracking-tight">WORKFLOW</h1>
@@ -84,7 +101,6 @@ const Dashboard = () => {
           </button>
         </header>
 
-        {/* Create Task Card */}
         <div className="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm mb-10">
           <form onSubmit={handleAddTodo} className="flex flex-col gap-4">
             <div className="flex flex-col md:flex-row gap-3">
@@ -111,28 +127,18 @@ const Dashboard = () => {
           </form>
         </div>
 
-        {/* Task List Section */}
         <div className="grid gap-4">
           <h2 className="text-lg font-bold text-gray-700 px-2">Your Timeline</h2>
           {todos.length > 0 ? (
             todos.map((todo) => (
               <div key={todo._id} className="group flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:border-blue-200 hover:shadow-md transition-all gap-4">
-                
                 <div className="flex items-center gap-4 w-full sm:w-auto">
-                  <div className="relative flex items-center">
-                    <input 
-                      type="checkbox" 
-                      className="w-6 h-6 rounded-full border-2 border-gray-300 checked:bg-blue-600 checked:border-blue-600 cursor-pointer transition-all appearance-none"
-                      checked={todo.isCompleted}
-                      onChange={() => handleToggle(todo)}
-                    />
-                    {todo.isCompleted && (
-                      <svg className="absolute w-4 h-4 text-white left-1 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
-                  
+                  <input 
+                    type="checkbox" 
+                    className="w-6 h-6 rounded-full border-2 border-gray-300 checked:bg-blue-600 checked:border-blue-600 cursor-pointer transition-all appearance-none"
+                    checked={todo.isCompleted}
+                    onChange={() => handleToggle(todo)}
+                  />
                   {editingId === todo._id ? (
                     <input 
                       className="flex-1 border-b-2 border-blue-500 outline-none text-lg py-1 font-medium italic"
@@ -152,32 +158,18 @@ const Dashboard = () => {
                     </div>
                   )}
                 </div>
-                
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-3 sm:pt-0 mt-2 sm:mt-0">
-                  <button 
-                    onClick={() => { setEditingId(todo._id); setEditTitle(todo.title); }}
-                    className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Edit Task"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <button onClick={() => { setEditingId(todo._id); setEditTitle(todo.title); }} className="p-2 text-gray-400 hover:text-blue-500">
+                    Edit
                   </button>
-                  <button 
-                    onClick={() => handleDelete(todo._id)} 
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Delete Task"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                  <button onClick={() => handleDelete(todo._id)} className="p-2 text-gray-400 hover:text-red-500">
+                    Delete
                   </button>
                 </div>
               </div>
             ))
           ) : (
-            <div className="bg-white border-2 border-dashed border-gray-200 rounded-2xl py-20 flex flex-col items-center justify-center">
-              <div className="bg-blue-50 text-blue-500 p-4 rounded-full mb-4">☕</div>
+            <div className="bg-white border-2 border-dashed border-gray-200 rounded-2xl py-20 text-center">
               <p className="text-gray-400 font-medium">All caught up! Time for a break.</p>
             </div>
           )}
