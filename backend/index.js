@@ -4,7 +4,8 @@ require("dotenv").config();
 const app = express();
 const PORT = 3000;
 
-const userRoute = require("./routes/user.route");
+const userRouter = require("./routes/user.route");
+const todoRouter = require("./routes/todo.routes");
 const connectDB = require("./config/db");
 
 connectDB();
@@ -17,7 +18,8 @@ app.use(cors({
 
 app.use(express.json());
 
-app.use("/user", userRoute);
+app.use("/user", userRouter);
+app.use("/todo", todoRouter);
 
 app.listen(PORT, () => {
   console.log(`server running on http://localhost:${PORT}`);
